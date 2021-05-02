@@ -1,0 +1,52 @@
+{
+  "name": "@kninnug/containing-triangle",
+  "version": "1.0.0",
+  "description": "Find the triangle of a Delaunator triangulation that contains a given point",
+  "main": "containing-triangle.js",
+  "exports": {
+    "import": "./containing-triangle.mjs",
+    "require": "./containing-triangle.js"
+  },
+  "files": [
+    "containing-triangle.mjs",
+    "containing-triangle.js",
+    "containing-triangle.min.js"
+  ],
+  "scripts": {
+    "test": "node test.mjs",
+    "build": "rollup -c",
+    "prepare": "npm run test && npm run build",
+    "clean": "rm -r ./coverage ./containing-triangle.js ./containing-triangle.min.js || true"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kninnug/containing-triangle-js.git"
+  },
+  "keywords": [
+    "delaunay",
+    "triangulation",
+    "containing",
+    "triangle",
+    "Delaunator"
+  ],
+  "author": "Marco Gunnink",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kninnug/containing-triangle-js/issues"
+  },
+  "homepage": "https://github.com/kninnug/containing-triangle-js#readme",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "robust-predicates": "^3.0.1"
+  },
+  "devDependencies": {
+    "@kninnug/constrainautor": "^2.0.0",
+    "@rollup/plugin-node-resolve": "^11.2.1",
+    "delaunator": "^5.0.0",
+    "rollup": "^2.46.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "tape": "^5.2.2"
+  }
+}
