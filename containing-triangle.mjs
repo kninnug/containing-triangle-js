@@ -76,36 +76,6 @@ function segPointDistSq(x1, y1, x2, y2, x, y){
 }
 
 /**
- * Whether a point is left of the line defined by two other points.
- *
- * @param {number} x1 The x coordinate of the first point on the line.
- * @param {number} y1 The y coordinate of the first point on the line.
- * @param {number} x2 The x coordinate of the second point on the line.
- * @param {number} y2 The y coordinate of the second point on the line.
- * @param {number} px The x coordinate of the query point.
- * @param {number} py The y coordinate of the query point.
- * @return {boolean} True if (px, py) is strictly to the left of the segment.
- */
-function isLeftOf(x1, y1, x2, y2, px, py){
-	return orient2d(x1, y1, x2, y2, px, py) > 0;
-}
-
-/**
- * Whether a point is right of the line defined by two other points.
- *
- * @param {number} x1 The x coordinate of the first point on the line.
- * @param {number} y1 The y coordinate of the first point on the line.
- * @param {number} x2 The x coordinate of the second point on the line.
- * @param {number} y2 The y coordinate of the second point on the line.
- * @param {number} px The x coordinate of the query point.
- * @param {number} py The y coordinate of the query point.
- * @return {boolean} True if (px, py) is strictly to the right of the segment.
- */
-function isRightOf(x1, y1, x2, y2, px, py){
-	return orient2d(x1, y1, x2, y2, px, py) < 0;
-}
-
-/**
  * Find the triangle that contains the given point.
  *
  * @source "A Robust Efficient Algorithm for Point Location in Triangulations"
@@ -117,70 +87,115 @@ function isRightOf(x1, y1, x2, y2, px, py){
  *         point lies outside the triangulation.
  */
 function containingTriangle(del, x, y){
-	function isRight(edg){
-		const p1 = del.triangles[edg],
-			p2 = del.triangles[nextEdge(edg)];
+	const triangles = del.triangles,
+		halfedges = del.halfedges,
+		coords = del.coords;
+	
+	function isRight(e){
+		const p1 = triangles[e],
+			p1x = coords[p1 * 2],
+			p1y = coords[p1 * 2 + 1],
+			p2 = triangles[nextEdge(e)],
+			p2x = coords[p2 * 2],
+			p2y = coords[p2 * 2 + 1];
 		
-		return isRightOf(del.coords[p1 * 2], del.coords[p1 * 2 + 1],
-				del.coords[p2 * 2], del.coords[p2 * 2 + 1], x, y);
+		return orient2d(p1x, p1y, p2x, p2y, x, y) < 0;
 	}
-	function isLeft(edg){
-		const p1 = del.triangles[edg],
-			p2 = del.triangles[nextEdge(edg)];
+	function isLeft(e){
+		const p1 = triangles[e],
+			p1x = coords[p1 * 2],
+			p1y = coords[p1 * 2 + 1],
+			p2 = triangles[nextEdge(e)],
+			p2x = coords[p2 * 2],
+			p2y = coords[p2 * 2 + 1];
 		
-		return isLeftOf(del.coords[p1 * 2], del.coords[p1 * 2 + 1],
-				del.coords[p2 * 2], del.coords[p2 * 2 + 1], x, y);
+		return orient2d(p1x, p1y, p2x, p2y, x, y) >= 0;
 	}
-	function dist(edg){
-		const p1 = del.triangles[edg],
-			p2 = del.triangles[nextEdge(edg)];
+	function dist(e){
+		const p1 = triangles[e],
+			p1x = coords[p1 * 2],
+			p1y = coords[p1 * 2 + 1],
+			p2 = triangles[nextEdge(e)],
+			p2x = coords[p2 * 2],
+			p2y = coords[p2 * 2 + 1];
 		
-		return segPointDistSq(del.coords[p1 * 2], del.coords[p1 * 2 + 1],
-				del.coords[p2 * 2], del.coords[p2 * 2 + 1], x, y);
+		return segPointDistSq(p1x, p1y, p2x, p2y, x, y);
 	}
 	
 	let edg = 0
 	if(isRight(edg)){
-		edg = del.halfedges[edg];
+		edg = halfedges[edg];
 	}
 	
 	while(edg !== -1){
-		const org = del.triangles[edg],
-			ox = del.coords[org * 2],
-			oy = del.coords[org * 2 + 1],
-			dPrev = nextEdge(edg),
-			dst = del.triangles[dPrev],
-			dx = del.coords[dst * 2],
-			dy = del.coords[dst * 2 + 1],
-			oNext = prevEdge(edg);
+		const dPrev = nextEdge(edg),
+			oNext = prevEdge(edg),
+			p1 = triangles[edg],
+			p1x = coords[p1 * 2],
+			p1y = coords[p1 * 2 + 1],
+			p2 = triangles[dPrev],
+			p2x = coords[p2 * 2],
+			p2y = coords[p2 * 2 + 1];
 		
-		if(sqdist(ox, oy, x, y) <= 0.0 || sqdist(dx, dy, x, y) <= 0.0){
+		if(sqdist(p1x, p1y, x, y) === 0.0 || sqdist(p2x, p2y, x, y) === 0.0){
 			return triOfEdge(edg);
 		}
 		
-		// half-edges are counter-clockwise, so flip the orientation
-		//let op = 0;
-		//if(!isLeft(oNext)){ 
-		//	op += 1;
-		//}
-		//if(!isLeft(dPrev)){
-		//	op += 2;
-		//}
-		const op = !isLeft(oNext)*1 + !isLeft(dPrev)*2;
+		let op = 0;
+		if(!isLeft(oNext)){
+			op += 1;
+		}
+		
+		if(!isLeft(dPrev)){
+			op += 2;
+		}
 		switch(op){
 			case 0: return triOfEdge(edg);
-			case 1: edg = del.halfedges[oNext]; break;
-			case 2: edg = del.halfedges[dPrev]; break;
-			case 3:
-				if(dist(oNext) < dist(dPrev)){
+			case 1: edg = halfedges[oNext]; break;
+			case 2: edg = halfedges[dPrev]; break;
+			case 3: {
+				const dn = dist(dPrev),
+					dp = dist(oNext);
+				if(dn < dp){
 					edg = oNext;
 				}else{
 					edg = dPrev;
 				}
+			}
 		}
 	}
 	
 	return -1;
 }
 
-export default containingTriangle;
+/**
+ * Whether a given point is inside the convex hull of a triangulation.
+ *
+ * @param {Delaunator} del The triangulation.
+ * @param {number} x The x coordinate.
+ * @param {number} y The y coordinate.
+ * @return {boolean} True if the point (x, y) is inside the triangulation.
+ */
+
+function isInTriangulation(del, x, y){
+	const hull = del.hull,
+		len = hull.length,
+		coords = del.coords;
+	
+	let prv = hull[len - 1];
+	for(let i = 0; i < len; i++){
+		const cur = hull[i],
+			p1x = coords[prv * 2], p1y = coords[prv * 2 + 1],
+			p2x = coords[cur * 2], p2y = coords[cur * 2 + 1];
+		
+		if(orient2d(p1x, p1y, p2x, p2y, x, y) < 0){
+			return false;
+		}
+		
+		prv = cur;
+	}
+	
+	return true;
+}
+
+export {isInTriangulation, containingTriangle as default};

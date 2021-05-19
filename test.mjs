@@ -1,27 +1,12 @@
 import tape from 'tape';
-import fs from 'fs';
 import {orient2d} from 'robust-predicates';
 import Delaunator from 'delaunator';
 import Constrainautor from '@kninnug/constrainautor';
-import containingTriangle from './containing-triangle.mjs';
+import {default as containingTriangle, isInTriangulation} from './containing-triangle.mjs';
+import {loadTests, loadFile, findTest} from './delaunaytests/loader.mjs';
 
-const N = 100000;
-
-function getBounds(del){
-	let minX = Infinity,
-		maxX = -Infinity,
-		minY = Infinity,
-		maxY = -Infinity;
-	
-	for(const id of del.hull){
-		minX = Math.min(minX, del.coords[id * 2]);
-		maxX = Math.max(maxX, del.coords[id * 2]);
-		minY = Math.min(minY, del.coords[id * 2 + 1]);
-		maxY = Math.max(maxY, del.coords[id * 2 + 1]);
-	}
-	
-	return {minX, maxX, minY, maxY};
-}
+const N = 10000,
+	testFiles = loadTests(false);
 
 function edgesOfTri(t){ return [t * 3, t * 3 + 1, t * 3 + 2]; }
 
@@ -48,18 +33,19 @@ function outsideAll(del, x, y){
 	return true;
 }
 
-function testFile(t, json){
-	const {points, edges} = json,
+function testFile(t, test){
+	const {points, edges} = test,
 		del = Delaunator.from(points),
 		con = new Constrainautor(del).constrainAll(edges),
-		{minX, minY, maxX, maxY} = getBounds(del);
+		{minX, minY, maxX, maxY} = test.extent;
 	
 	let outs = 0;
 	for(let i = 0; i < N; i++){
 		const round = i & 1 ? Math.round : a => a,
-			x = round(Math.random() * (maxX - minX) + minX),
-			y = round(Math.random() * (maxY - minY) + minY),
-			found = containingTriangle(del, x, y);
+			x = round(Math.random() * ((maxX + 1) - minX) + (minX - 1)),
+			y = round(Math.random() * ((maxY + 1) - minY) + (minY - 1)),
+			found = containingTriangle(del, x, y),
+			isIn = isInTriangulation(del, x, y);
 		
 		if(found === -1){
 			const outside = outsideAll(del, x, y);
@@ -67,10 +53,16 @@ function testFile(t, json){
 			if(!outside){
 				t.fail(`(${x}, ${y}) not found, but is in triangulation`);
 			}
+			if(isIn){
+				t.fail(`inconsistent result from isInTriangulation (outside but isIn)`);
+			}
 		}else{
 			const inside = isInTriangle(del, found, x, y);
 			if(!inside){
 				t.fail(`(${x}, ${y}) found at ${found} but is not inside`);
+			}
+			if(!isIn){
+				t.fail(`inconsistent result from isInTriangulation (inside but not isIn)`);
 			}
 		}
 	}
@@ -80,12 +72,14 @@ function testFile(t, json){
 
 function testCases(t, del, cases){
 	for(const [x, y, refTri] of cases){
-		const tri = containingTriangle(del, x, y);
+		const tri = containingTriangle(del, x, y),
+			isIn = isInTriangulation(del, x, y);
 		t.equal(tri, refTri, `(${x}, ${y}) in ${refTri}`);
+		t.equal(isIn, refTri !== -1, `(${x}, ${y}) ${refTri === -1 ? 'not ' : ''}in triangulation`);
 		if(tri !== -1){
 			t.assert(isInTriangle(del, tri, x, y), `(${x}, ${y}) within ${tri}`);
 		}else{
-			t.assert(outsideAll(del, x, y), `(${x}, ${y}) not in triangulation`);
+			t.assert(outsideAll(del, x, y), `(${x}, ${y}) outside all`);
 		}
 	}
 }
@@ -110,9 +104,9 @@ function testDiamond(t){
 	
 	const con = new Constrainautor(del).constrainAll(edges),
 		postStrain = [
-			[150, 150, 1], // middle top
-			[150, 200, 1], // middle middle
-			[150, 250, 1], // middle bottom
+			[150, 150, 0], // middle top
+			[150, 200, 0], // middle middle
+			[150, 250, 0], // middle bottom
 			[100, 200, 1], // middle left
 			[200, 200, 0], // middle right
 			[150,  50, 0],
@@ -145,21 +139,48 @@ function testExample(t){
 	t.end();
 }
 
-const files = fs.readdirSync('./tests/', 'utf8').map(f => './tests/' + f)
-		.concat(fs.readdirSync('./tests/ipa/', 'utf8').map(f => './tests/ipa/' + f))
-		.filter(f => f.endsWith('.json'));
+function testEdges(t){
+	const points = [[5, 5], [10, 5], [5, 10]],
+		del = Delaunator.from(points),
+		cases = [
+			[6, 5, 0],
+			[5, 6, 0],
+			[5, 5, 0],
+			[10, 5, 0],
+			[5, 10, 0],
+			[9, 6, 0],
+			[8, 7, 0],
+			[7, 8, 0],
+			[6, 9, 0]
+		];
+	
+	testCases(t, del, cases);
+	t.end();
+}
+
+function testIssue1(t){
+	const test = findTest(testFiles, 'rand0.json'),
+		{points, edges} = test,
+		del = new Constrainautor(Delaunator.from(points)).constrainAll(edges),
+		cases = [
+			[212, 40, 1235],
+			[211, 196, 712]
+		];
+	
+	testCases(t, del, cases);
+	t.end();
+}
 
 function main(args){
 	if(!args.length){
 		tape.test("Example", testExample);
 		tape.test("Diamond", testDiamond);
+		tape.test("Edges", testEdges);
+		tape.test("Issue 1", testIssue1);
 	}
-	
-	args = args.length ? args : files;
 
-	for(const file of args){
-		const json = JSON.parse(fs.readFileSync(file, 'utf8'));
-		tape.test(file, (t) => testFile(t, json));
+	for(const test of testFiles){
+		tape.test(test.name, (t) => testFile(t, test));
 	}
 }
 

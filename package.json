@@ -2,7 +2,8 @@
   "name": "@kninnug/containing-triangle",
   "version": "1.0.0",
   "description": "Find the triangle of a Delaunator triangulation that contains a given point",
-  "main": "containing-triangle.js",
+  "main": "containing-triangle.min.js",
+  "module": "containing-triangle.mjs",
   "exports": {
     "import": "./containing-triangle.mjs",
     "require": "./containing-triangle.js"
