@@ -2,7 +2,7 @@ import tape from 'tape';
 import {orient2d} from 'robust-predicates';
 import Delaunator from 'delaunator';
 import Constrainautor from '@kninnug/constrainautor';
-import {default as containingTriangle, isInTriangulation} from './containing-triangle.mjs';
+import containingTriangle, {isInTriangulation} from './containing-triangle.mjs';
 import {loadTests, loadFile, findTest} from './delaunaytests/loader.mjs';
 
 const N = 10000,

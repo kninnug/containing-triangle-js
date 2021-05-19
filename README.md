@@ -31,11 +31,12 @@ Install from NPM:
 	
 Use in Node.js:
 
-	const containingTriangle = require('@kninnug/containing-triangle');
+	const containingTriangle = require('@kninnug/containing-triangle'),
+		isInTriangulation = containingTriangle.isInTriangulation;
 	
 or as an ECMAScript/ES6 module:
 
-	import containingTriangle from '@kninnug/containing-triangle';
+	import containingTriangle, {isInTriangulation} from '@kninnug/containing-triangle';
 
 or in the browser:
 
@@ -58,9 +59,15 @@ Usage
 ### containingTriangle(del, x, y)
 
 Given a triangulation from Delaunator: `del`, and the coordinates of a point
-(`x`, `y`), finds the triangle that contains that point. Returns the triangle
-id, or -1 if the point is outside the hull of the triangulation, i.e. not in any
-of its triangles.
+(`x`, `y`), finds the triangle that contains that point. Returns the [triangle
+id](https://mapbox.github.io/delaunator/#edge-and-triangle), or -1 if the point
+is outside the hull of the triangulation, i.e. not in any of its triangles.
+
+### isInTriangulation(del, x, y)
+
+Whether a point (`x`, `y`) is within the hull of the given triangulation. Should
+generally be faster if you only want to know if the point is in the
+triangulation and don't care what triangle it's in.
 
 Attributions
 ------------

@@ -4,7 +4,7 @@ import resolve from '@rollup/plugin-node-resolve';
 function config(name){
 	return [
 		{
-			input: name + '.mjs',
+			input: 'reroll.mjs',
 			output: {
 				name,
 				format: 'umd',
@@ -13,7 +13,7 @@ function config(name){
 			plugins: [resolve()]
 		},
 		{
-			input: name + '.mjs',
+			input: 'reroll.mjs',
 			output: {
 				name,
 				format: 'umd',
