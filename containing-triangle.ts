@@ -1,36 +1,43 @@
 import {orient2d} from 'robust-predicates';
 
+export interface DelaunatorLike {
+    coords: {readonly length: number, readonly [n: number]: number};
+    triangles:  {readonly length: number, [n: number]: number};
+    halfedges:  {readonly length: number, [n: number]: number};
+    hull:  {readonly length: number, readonly [n: number]: number};
+}
+
 /**
  * Next half-edge counter-clockwise in a triangle.
  *
- * @param {number} e Half-edge id.
- * @return {number} Id of the next half-edge.
+ * @param e Half-edge id.
+ * @return Id of the next half-edge.
  */
-function nextEdge(e){ return (e % 3 === 2) ? e - 2 : e + 1; }
+function nextEdge(e: number){ return (e % 3 === 2) ? e - 2 : e + 1; }
 /**
  * Previous half-edge counter-clockwise in a triangle.
  *
- * @param {number} e Half-edge id.
- * @return {number} Id of the previous half-edge.
+ * @param e Half-edge id.
+ * @return Id of the previous half-edge.
  */
-function prevEdge(e){ return (e % 3 === 0) ? e + 2 : e - 1; }
+function prevEdge(e: number){ return (e % 3 === 0) ? e + 2 : e - 1; }
 /**
  * Id of the triangle of the given half-edge.
  *
- * @param {number} e Half-edge id.
- * @return {number} Id of the triangle.
+ * @param e Half-edge id.
+ * @return Id of the triangle.
  */
-function triOfEdge(e){ return (e / 3) | 0; }
+function triOfEdge(e: number){ return (e / 3) | 0; }
 /**
  * Square distance between two points of a triangulation.
  *
- * @param {number} x1 First point x coordinate.
- * @param {number} y1 First point y coordinate.
- * @param {number} x2 Second point x coordinate.
- * @param {number} y2 Second point y coordinate.
- * @return {number} The squared distance.
+ * @param x1 First point x coordinate.
+ * @param y1 First point y coordinate.
+ * @param x2 Second point x coordinate.
+ * @param y2 Second point y coordinate.
+ * @return The squared distance.
  */
-function sqdist(x1, y1, x2, y2){
+function sqdist(x1: number, y1: number, x2: number, y2: number){
 	const dx = x2 - x1,
 		dy = y2 - y1;
 	
@@ -41,15 +48,15 @@ function sqdist(x1, y1, x2, y2){
  * Distance between a point and the nearest point to it on a segment, squared.
  *
  * @source https://stackoverflow.com/a/6853926
- * @param {number} x1 The segment point 1 x-coordinate.
- * @param {number} y1 The segment point 1 y-coordinate.
- * @param {number} x2 The segment point 2 x-coordinate.
- * @param {number} y2 The segment point 2 y-coordinate.
- * @param {number} x The point x-coordinate.
- * @param {number} y The point y-coordinate.
- * @return {number} The distance squared.
+ * @param x1 The segment point 1 x-coordinate.
+ * @param y1 The segment point 1 y-coordinate.
+ * @param x2 The segment point 2 x-coordinate.
+ * @param y2 The segment point 2 y-coordinate.
+ * @param x The point x-coordinate.
+ * @param y The point y-coordinate.
+ * @return The distance squared.
  */
-function segPointDistSq(x1, y1, x2, y2, x, y){
+function segPointDistSq(x1: number, y1: number, x2: number, y2: number, x: number, y: number){
 	const A = x - x1,
 		B = y - y1,
 		C = x2 - x1,
@@ -80,18 +87,18 @@ function segPointDistSq(x1, y1, x2, y2, x, y){
  *
  * @source "A Robust Efficient Algorithm for Point Location in Triangulations"
  *          - Peter J.C. Brown, Christopher T. Faigle
- * @param {Delaunator} del The triangulation.
- * @param {number} x The x coordinate.
- * @param {number} y The y coordinate.
- * @return {number} The id of the triangle containing the point, or -1 if the
+ * @param del The triangulation.
+ * @param x The x coordinate.
+ * @param y The y coordinate.
+ * @return The id of the triangle containing the point, or -1 if the
  *         point lies outside the triangulation.
  */
-function containingTriangle(del, x, y){
+function containingTriangle(del: DelaunatorLike, x: number, y: number){
 	const triangles = del.triangles,
 		halfedges = del.halfedges,
 		coords = del.coords;
 	
-	function isRight(e){
+	function isRight(e: number){
 		const p1 = triangles[e],
 			p1x = coords[p1 * 2],
 			p1y = coords[p1 * 2 + 1],
@@ -101,7 +108,7 @@ function containingTriangle(del, x, y){
 		
 		return orient2d(p1x, p1y, p2x, p2y, x, y) < 0;
 	}
-	function isLeft(e){
+	function isLeft(e: number){
 		const p1 = triangles[e],
 			p1x = coords[p1 * 2],
 			p1y = coords[p1 * 2 + 1],
@@ -111,7 +118,7 @@ function containingTriangle(del, x, y){
 		
 		return orient2d(p1x, p1y, p2x, p2y, x, y) >= 0;
 	}
-	function dist(e){
+	function dist(e: number){
 		const p1 = triangles[e],
 			p1x = coords[p1 * 2],
 			p1y = coords[p1 * 2 + 1],
@@ -171,13 +178,13 @@ function containingTriangle(del, x, y){
 /**
  * Whether a given point is inside the convex hull of a triangulation.
  *
- * @param {Delaunator} del The triangulation.
- * @param {number} x The x coordinate.
- * @param {number} y The y coordinate.
- * @return {boolean} True if the point (x, y) is inside the triangulation.
+ * @param del The triangulation.
+ * @param x The x coordinate.
+ * @param y The y coordinate.
+ * @return True if the point (x, y) is inside the triangulation.
  */
 
-function isInTriangulation(del, x, y){
+function isInTriangulation(del: DelaunatorLike, x: number, y: number){
 	const hull = del.hull,
 		len = hull.length,
 		coords = del.coords;

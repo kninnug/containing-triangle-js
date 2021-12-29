@@ -40,18 +40,19 @@ or as an ECMAScript/ES6 module:
 
 or in the browser:
 
-	<script src="node_modules/@kninnug/containing-triangle/containing-triangle.js"></script>
+	<script src="node_modules/@kninnug/containing-triangle/lib/containing-triangle.js"></script>
 
 or minified:
 
-	<script src="node_modules/@kninnug/containing-triangle/containing-triangle.min.js"></script>
+	<script src="node_modules/@kninnug/containing-triangle/lib/containing-triangle.min.js"></script>
 
 The containing-triangle library does not depend on Delaunator itself, but the
 input is expected to be in the format that Delaunator outputs. The ES module
-variant (`containing-triangle.mjs`) depends on [robust-predicates](https://www.npmjs.com/package/robust-predicates),
-but the browser and minified versions (`containing-triangle.js` and
-`containing-triangle.min.js`) come with this dependency compiled in, and can be
-used standalone.
+variant (`lib/containing-triangle.mjs`) depends on [robust-predicates](https://www.npmjs.com/package/robust-predicates),
+but the CommonJS, browser, and minified versions (`lib/containing-triangle.cjs`,
+`lib/containing-triangle.js`, and `lib/containing-triangle.min.js`) come with 
+this dependency compiled in, and can be used standalone. The (source)
+TypeScript version is in `Constrainautor.ts`.
 
 Usage
 -----
@@ -68,6 +69,24 @@ is outside the hull of the triangulation, i.e. not in any of its triangles.
 Whether a point (`x`, `y`) is within the hull of the given triangulation. Should
 generally be faster if you only want to know if the point is in the
 triangulation and don't care what triangle it's in.
+
+Changes
+-------
+
+### 2.0.0
+- Convert to TypeScript.
+- Move built files to `lib/`.
+
+### 1.1.1
+- Update dependencies.
+
+### 1.1.0
+- Fix stability issue.
+- Add `isInTriangulation` function.
+- Move test files to separate repository (to share with other libraries).
+
+### 1.0.0
+- Initial version.
 
 Attributions
 ------------
